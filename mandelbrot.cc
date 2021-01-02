@@ -54,13 +54,13 @@ int main(int argc, char **argv) {
   const float color_scale = ((float)max_color / (float)max_iter);
  
   stopwatch_calc.Start();
-
+  int thread_val = 0;
   // iterate over image pixels and calculate their value
-  #pragma omp parallel for schedule(static)
+  #pragma omp parallel for private(thread_val) schedule(dynamic, 800)
   for (int x = 0; x < width; x++) {
     for (int y = 0; y < height; y++) {
+      thread_val = omp_get_thread_num() * 63;
       complex c(x0 + cx * (x - width / 2), y0 + cy * (y - height / 2));
-
       // scale to color pallet (value between 0 and 255 and invert)
       int iter = mandelbrot(c, max_dist, max_iter);
       int color_val = max_color - nearbyint(((float)iter * color_scale));
@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
 
       image[4 * width * y + 4 * x + 0] = color_val; // R
       image[4 * width * y + 4 * x + 1] = color_val; // G
-      image[4 * width * y + 4 * x + 2] = omp_get_thread_num() * 63; // B
+      image[4 * width * y + 4 * x + 2] = thread_val; // B
       image[4 * width * y + 4 * x + 3] = 255;       // Alpha
     }
   }
